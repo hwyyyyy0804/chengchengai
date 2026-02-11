@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>诚诚的智能教室 · 点击悬浮球必隐藏气泡</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", sans-serif;
+      background-image: url('https://img1.baidu.com/it/u=2777454066,1191814302&fm=253&app=138&f=JPEG?w=1422&h=800');
+      background-size: cover;
+      background-position: center;
+      position: relative;
+    }
+
+    .chengcheng {
+      position: absolute;
+      bottom: 0px;
+      left: 50px;
+      width: 750px;
+      height: 750px;
+      object-fit: contain;
+      z-index: 10;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .chengcheng:hover {
+      transform: scale(1.02);
+    }
+
+    #position_demo {
+      position: absolute;
+      right: 10px;
+      bottom: 20px;
+    }
+
+    /* ---------- 引导气泡：向下箭头，位于悬浮球正上方 ---------- */
+    .coze-guide {
+      position: fixed;
+      right: 20px;
+      bottom: 130px;        /* 完全不遮挡悬浮球 */
+      z-index: 9999;
+      pointer-events: none; /* 点击穿透，直接点中下方悬浮球 */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .guide-bubble {
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(4px);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 18px;
+      font-weight: bold;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.3);
+      white-space: nowrap;
+      animation: gentle-bounce 2s infinite ease-in-out;
+      position: relative;
+    }
+
+    /* 向下箭头 */
+    .guide-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -12px;
+      right: 30px;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 12px solid rgba(0, 0, 0, 0.85);
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+    }
+
+    @keyframes gentle-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    /* 强制隐藏引导气泡（!important 确保最高优先级） */
+    .coze-guide.hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <!-- 诚诚头像（备用入口） -->
+  <img src="https://t.tutu.to/img/udELR" alt="诚诚" class="chengcheng" id="chengcheng-avatar" />
+
+  <div id="position_demo"></div>
+
+  <!-- 引导气泡 -->
+  <div class="coze-guide" id="cozeGuide">
+    <div class="guide-bubble">
+      ✨ 点我和诚诚聊天
+    </div>
+  </div>
+
+  <!-- Coze SDK -->
+  <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.20/libs/cn/index.js"></script>
+  <script>
+    (function() {
+      let cozeInstance = null;
+      const guide = document.getElementById('cozeGuide');
+
+      // ----- 隐藏气泡（统一方法）-----
+      function hideGuide() {
+        if (guide && !guide.classList.contains('hidden')) {
+          guide.classList.add('hidden');
+          console.log('✅ 引导气泡已隐藏 (hideGuide)');
+        }
+      }
+
+      // ----- 诚诚头像点击处理 -----
+      function onChengClick() {
+        if (cozeInstance) cozeInstance.open();
+        console.log('💬 点击诚诚，打开对话框');
+        hideGuide();
+      }
+
+      // ========== 初始化 Coze SDK ==========
+      const cozeWebSDK = new CozeWebSDK.WebChatClient({
+        config: {
+          type: 'bot',
+          bot_id: '7604541826409857074',
+          isIframe: false,
+        },
+        auth: {
+          type: 'token',
+          token: 'pat_fPrd68MeDV4AseIVziRHkG2doulT74yxvVG1xH0fL6j0ziF0AIiGS88bYEJXFDLI',
+          onRefreshToken: async () => 'token'
+        },
+        userInfo: {
+          id: 'user123',
+          url: 'https://q2.itc.cn/q_70/images03/20240327/84a1db06332442d8a6f5355e14fca037.png',
+          nickname: '静小宝',
+        },
+        ui: {
+          base: {
+            icon: 'https://q2.itc.cn/q_70/images03/20240327/84a1db06332442d8a6f5355e14fca037.png',
+            layout: 'pc',
+            lang: 'zh-CN',
+            zIndex: 1000
+          },
+          header: { isShow: true, isNeedClose: true },
+          asstBtn: { isNeed: true }, // ✅ 悬浮球（核心入口）
+          footer: {
+            isShow: true,
+            expressionText: 'Powered by {{name}} {{name1}}',
+            linkvars: {
+              name: { text: 'A', link: 'https://www.test1.com' },
+              name1: { text: 'B', link: 'https://www.test2.com' }
+            }
+          },
+          conversations: { isNeed: false },
+          chatBot: {
+            title: '诚信小助手诚诚',
+            uploadable: true,
+            width: 800,
+            isNeedAudio: true,
+            isNeedFunctionCallMessage: true,
+            isNeedAddNewConversation: true,
+            isNeedQuote: true,
+            feedback: {
+              isNeedFeedback: true,
+              feedbackPanel: {
+                title: '您对这个回答有什么看法？请告诉我们',
+                placeholder: '请详细描述您的问题...',
+                tags: [
+                  { label: '内容不够详细', isNeedDetail: false },
+                  { label: '内容错误', isNeedDetail: false },
+                  { label: '其他', isNeedDetail: true },
+                ],
+              },
+            },
+          },
+        },
+        onReady: () => {
+          console.log('✅ Coze SDK 已就绪');
+          cozeInstance = cozeWebSDK;
+
+          // ----- 绑定诚诚头像（确保只绑定一次）-----
+          const cheng = document.getElementById('chengcheng-avatar');
+          if (cheng) {
+            cheng.removeEventListener('click', onChengClick);
+            cheng.addEventListener('click', onChengClick);
+          }
+
+          // ----- 尝试绑定悬浮球点击（用MutationObserver确保绑定）-----
+          const observer = new MutationObserver(() => {
+            const launcher = document.querySelector('.coze-web-sdk-launcher');
+            if (launcher) {
+              // 调整尺寸（原有需求）
+              launcher.style.width = '80px';
+              launcher.style.height = '80px';
+              const icon = launcher.querySelector('img, svg');
+              if (icon) {
+                icon.style.width = '100%';
+                icon.style.height = '100%';
+                icon.style.objectFit = 'contain';
+              }
+
+              // 绑定点击事件（防止重复）
+              launcher.removeEventListener('click', hideGuide);
+              launcher.addEventListener('click', hideGuide);
+              console.log('🤖 悬浮球点击绑定成功 (MutationObserver)');
+              observer.disconnect();
+            }
+          });
+          observer.observe(document.body, { childList: true, subtree: true });
+        }
+      });
+
+      // ---------- 🚀 终极保险：全局事件委托（捕获阶段）----------
+      // 无论悬浮球何时出现、是否绑定成功，点击悬浮球必隐藏气泡
+      document.body.addEventListener('click', function(e) {
+        // 检查点击元素是否属于悬浮球（多种特征）
+        const target = e.target;
+        const isLauncher = target.closest('.coze-web-sdk-launcher') || 
+                          target.closest('[class*="coze-web-sdk"]') || // 模糊匹配
+                          (target.tagName === 'IMG' && target.alt === '诚诚') || // 排除诚诚头像
+                          (target.closest('button') && target.closest('button')?.innerHTML.includes('icon')); // 额外特征
+        
+        // 明确排除诚诚头像（它有自己的处理，但也会触发隐藏）
+        const isCheng = target.closest('#chengcheng-avatar');
+        
+        if (isLauncher || isCheng) {
+          hideGuide();
+          console.log('🛡️ 全局捕获点击，引导气泡已隐藏', isLauncher ? '来自悬浮球' : '来自诚诚');
+        }
+      }, true); // 捕获阶段确保优先执行
+
+      // ---------- 🔁 双重轮询：每500ms检查一次，若悬浮球存在但未绑定尺寸，则强制绑定-----
+      // 防止MutationObserver在某些极端情况下未触发
+      let pollCount = 0;
+      const pollTimer = setInterval(() => {
+        const launcher = document.querySelector('.coze-web-sdk-launcher');
+        if (launcher) {
+          // 确保尺寸已调整
+          if (launcher.style.width !== '80px') {
+            launcher.style.width = '80px';
+            launcher.style.height = '80px';
+            const icon = launcher.querySelector('img, svg');
+            if (icon) {
+              icon.style.width = '100%';
+              icon.style.height = '100%';
+              icon.style.objectFit = 'contain';
+            }
+            console.log('🔄 轮询：悬浮球尺寸已调整');
+          }
+          // 确保点击事件已绑定（通过检查是否有我们添加的自定义属性，或者直接绑定）
+          if (!launcher.dataset.guideBound) {
+            launcher.addEventListener('click', hideGuide);
+            launcher.dataset.guideBound = 'true';
+            console.log('🔄 轮询：悬浮球点击事件已绑定');
+          }
+        }
+        pollCount++;
+        if (pollCount > 40) clearInterval(pollTimer); // 20秒后停止
+      }, 500);
+    })();
+  </script>
+</body>
+</html>
