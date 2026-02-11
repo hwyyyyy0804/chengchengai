@@ -107,7 +107,11 @@
       ✨ 点我和诚诚聊天
     </div>
   </div>
-
+<!-- ========== 🎵 问候语音（请替换 src 为您自己的语音链接） ========== -->
+<audio id="greetingAudio" 
+       src="https://github.com/hwyyyyy0804/chengchengai/raw/e441b29d6e22afd1855981de658869f9a4ea9650/%E8%AF%9A%E4%BF%A1%E5%B0%8F%E5%8A%A9%E6%89%8B.mp3" 
+       preload="auto"
+       style="display: none;">
   <!-- Coze SDK -->
   <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.20/libs/cn/index.js"></script>
   <script>
@@ -271,6 +275,28 @@
         if (pollCount > 40) clearInterval(pollTimer); // 20秒后停止
       }, 500);
     })();
+    // ========== 🎵 问候语音播放逻辑 ==========
+const audio = document.getElementById('greetingAudio');
+if (audio && audio.src && audio.src !== window.location.href) {
+  // 尝试自动播放
+  let playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch(() => {
+      console.log('🔇 自动播放被阻止，将在首次点击页面时播放问候语');
+      const playOnFirstClick = (e) => {
+        setTimeout(() => {
+          audio.play().catch(err => console.warn('🎧 语音播放失败:', err));
+        }, 10);
+        document.body.removeEventListener('click', playOnFirstClick, true);
+        document.body.removeEventListener('touchstart', playOnFirstClick, true);
+      };
+      document.body.addEventListener('click', playOnFirstClick, true);
+      document.body.addEventListener('touchstart', playOnFirstClick, true);
+    });
+  }
+} else {
+  console.warn('⚠️ 未检测到有效的语音链接，请在 <audio> 标签中填写正确的 src');
+}
   </script>
 </body>
 </html>
