@@ -118,6 +118,7 @@
     (function() {
       let cozeInstance = null;
       const guide = document.getElementById('cozeGuide');
+      const audio = document.getElementById('greetingAudio');   // 👈 新增此行
 
       // ----- 隐藏气泡（统一方法）-----
       function hideGuide() {
@@ -132,6 +133,11 @@
         if (cozeInstance) cozeInstance.open();
         console.log('💬 点击诚诚，打开对话框');
         hideGuide();
+        if (audio) {
+    audio.currentTime = 0;
+    audio.play().catch(err => console.warn('🎧 语音播放失败:', err));
+  }
+}
       }
 
       // ========== 初始化 Coze SDK ==========
