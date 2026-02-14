@@ -107,18 +107,21 @@
       ✨ 点我和诚诚聊天
     </div>
   </div>
-<!-- ========== 🎵 问候语音（请替换 src 为您自己的语音链接） ========== -->
-<audio id="greetingAudio" 
-       src="https://github.com/hwyyyyy0804/chengchengai/raw/e441b29d6e22afd1855981de658869f9a4ea9650/%E8%AF%9A%E4%BF%A1%E5%B0%8F%E5%8A%A9%E6%89%8B.mp3" 
-       preload="auto"
-       style="display: none;">
+
+  <!-- ========== 🎵 问候语音（请替换 src 为您自己的语音链接） ========== -->
+  <audio id="greetingAudio" 
+         src="https://github.com/hwyyyyy0804/chengchengai/raw/e441b29d6e22afd1855981de658869f9a4ea9650/%E8%AF%9A%E4%BF%A1%E5%B0%8F%E5%8A%A9%E6%89%8B.mp3" 
+         preload="auto"
+         style="display: none;"></audio>
+  <!-- ⚠️ 将上方 src 替换为您自己的语音链接，支持 .mp3/.wav/.ogg 等格式 -->
+
   <!-- Coze SDK -->
   <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.20/libs/cn/index.js"></script>
   <script>
     (function() {
       let cozeInstance = null;
       const guide = document.getElementById('cozeGuide');
-      const audio = document.getElementById('greetingAudio');   // 👈 新增此行
+      const audio = document.getElementById('greetingAudio'); // 获取音频元素
 
       // ----- 隐藏气泡（统一方法）-----
       function hideGuide() {
@@ -128,16 +131,17 @@
         }
       }
 
-      // ----- 诚诚头像点击处理 -----
+      // ----- 诚诚头像点击处理（打开对话框 + 播放语音）-----
       function onChengClick() {
         if (cozeInstance) cozeInstance.open();
         console.log('💬 点击诚诚，打开对话框');
         hideGuide();
+
+        // 🎵 点击诚诚时播放问候语音
         if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch(err => console.warn('🎧 语音播放失败:', err));
-  }
-}
+          audio.currentTime = 0; // 从头开始播放，避免重叠
+          audio.play().catch(err => console.warn('🎧 语音播放失败:', err));
+        }
       }
 
       // ========== 初始化 Coze SDK ==========
@@ -234,31 +238,25 @@
       });
 
       // ---------- 🚀 终极保险：全局事件委托（捕获阶段）----------
-      // 无论悬浮球何时出现、是否绑定成功，点击悬浮球必隐藏气泡
       document.body.addEventListener('click', function(e) {
-        // 检查点击元素是否属于悬浮球（多种特征）
         const target = e.target;
         const isLauncher = target.closest('.coze-web-sdk-launcher') || 
-                          target.closest('[class*="coze-web-sdk"]') || // 模糊匹配
-                          (target.tagName === 'IMG' && target.alt === '诚诚') || // 排除诚诚头像
-                          (target.closest('button') && target.closest('button')?.innerHTML.includes('icon')); // 额外特征
-        
-        // 明确排除诚诚头像（它有自己的处理，但也会触发隐藏）
+                          target.closest('[class*="coze-web-sdk"]') ||
+                          (target.tagName === 'IMG' && target.alt === '诚诚') ||
+                          (target.closest('button') && target.closest('button')?.innerHTML.includes('icon'));
         const isCheng = target.closest('#chengcheng-avatar');
         
         if (isLauncher || isCheng) {
           hideGuide();
           console.log('🛡️ 全局捕获点击，引导气泡已隐藏', isLauncher ? '来自悬浮球' : '来自诚诚');
         }
-      }, true); // 捕获阶段确保优先执行
+      }, true);
 
       // ---------- 🔁 双重轮询：每500ms检查一次，若悬浮球存在但未绑定尺寸，则强制绑定-----
-      // 防止MutationObserver在某些极端情况下未触发
       let pollCount = 0;
       const pollTimer = setInterval(() => {
         const launcher = document.querySelector('.coze-web-sdk-launcher');
         if (launcher) {
-          // 确保尺寸已调整
           if (launcher.style.width !== '80px') {
             launcher.style.width = '80px';
             launcher.style.height = '80px';
@@ -270,7 +268,6 @@
             }
             console.log('🔄 轮询：悬浮球尺寸已调整');
           }
-          // 确保点击事件已绑定（通过检查是否有我们添加的自定义属性，或者直接绑定）
           if (!launcher.dataset.guideBound) {
             launcher.addEventListener('click', hideGuide);
             launcher.dataset.guideBound = 'true';
@@ -278,31 +275,17 @@
           }
         }
         pollCount++;
-        if (pollCount > 40) clearInterval(pollTimer); // 20秒后停止
+        if (pollCount > 40) clearInterval(pollTimer);
       }, 500);
+
+      // ========== 🎵 页面加载时自动尝试播放问候语音（可选，不强制）==========
+      if (audio && audio.src && audio.src !== window.location.href) {
+        audio.play().catch(() => {
+          // 自动播放被浏览器阻止，静默失败（后续点击诚诚会播放）
+          console.log('🔇 自动播放被阻止，点击诚诚即可播放问候语');
+        });
+      }
     })();
-    // ========== 🎵 问候语音播放逻辑 ==========
-const audio = document.getElementById('greetingAudio');
-if (audio && audio.src && audio.src !== window.location.href) {
-  // 尝试自动播放
-  let playPromise = audio.play();
-  if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      console.log('🔇 自动播放被阻止，将在首次点击页面时播放问候语');
-      const playOnFirstClick = (e) => {
-        setTimeout(() => {
-          audio.play().catch(err => console.warn('🎧 语音播放失败:', err));
-        }, 10);
-        document.body.removeEventListener('click', playOnFirstClick, true);
-        document.body.removeEventListener('touchstart', playOnFirstClick, true);
-      };
-      document.body.addEventListener('click', playOnFirstClick, true);
-      document.body.addEventListener('touchstart', playOnFirstClick, true);
-    });
-  }
-} else {
-  console.warn('⚠️ 未检测到有效的语音链接，请在 <audio> 标签中填写正确的 src');
-}
   </script>
 </body>
 </html>
